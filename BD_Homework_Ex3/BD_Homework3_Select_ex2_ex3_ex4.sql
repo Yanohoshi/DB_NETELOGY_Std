@@ -24,8 +24,10 @@ WHERE name NOT LIKE '% %';
 -- 5. Название треков, которые содержат слово «мой» или «ту»
 SELECT title
 FROM tracks
-WHERE LOWER(title) LIKE '%мой%' OR LOWER(title) LIKE '%my%';
-
+WHERE LOWER(title) LIKE '% my %'    -- слово в середине
+   OR LOWER(title) LIKE 'my %'      -- слово в начале
+   OR LOWER(title) LIKE '% my'      -- слово в конце
+   OR LOWER(title) = 'my';          -- только слово "my"
 
 -- ЗАДАНИЕ 3
 -- 1. Количество исполнителей в каждом жанре
@@ -80,57 +82,3 @@ JOIN albumartists aa ON al.id = aa.album_id
 JOIN artists ar ON aa.artist_id = ar.id
 WHERE ar.name = 'The Beatles'
 ORDER BY c.release_year;
-
-
--- ЗАДАНИЕ 4
--- 1. Названия альбомов, в которых присутствуют исполнители более чем одного жанра
-SELECT DISTINCT a.title AS album_title, ar.name AS artist_name
-FROM albums a
-JOIN albumartists aa ON a.id = aa.album_id
-JOIN artists ar ON aa.artist_id = ar.id
-WHERE ar.id IN (
-    SELECT artist_id
-    FROM artistgenres
-    GROUP BY artist_id
-    HAVING COUNT(DISTINCT genre_id) > 1
-)
-ORDER BY a.title;
-
--- 2. Наименования треков, которые не входят в сборники
-SELECT t.title AS track_title, a.title AS album_title, ar.name AS artist_name
-FROM tracks t
-JOIN albums a ON t.album_id = a.id
-JOIN albumartists aa ON a.id = aa.album_id
-JOIN artists ar ON aa.artist_id = ar.id
-WHERE t.id NOT IN (
-    SELECT DISTINCT track_id FROM collectiontracks
-)
-ORDER BY t.title;
-
--- 3. Исполнитель или исполнители, написавшие самый короткий по продолжительности трек
-SELECT '• ' || ar.name || ' (трек: "' || t.title || '", длительность: ' || 
-    TO_CHAR((t.duration || ' seconds')::interval, 'MI:SS') || ')' as "Результат"
-FROM tracks t
-JOIN albums a ON t.album_id = a.id
-JOIN albumartists aa ON a.id = aa.album_id
-JOIN artists ar ON aa.artist_id = ar.id
-WHERE t.duration = (SELECT MIN(duration) FROM tracks)
-ORDER BY ar.name;
-
--- 4. Названия альбомов, содержащих наименьшее количество треков
-SELECT 
-    a.title AS album_title,
-    COUNT(t.id) AS track_count,
-    a.release_year
-FROM albums a
-JOIN tracks t ON a.id = t.album_id
-GROUP BY a.id, a.title, a.release_year
-HAVING COUNT(t.id) = (
-    SELECT MIN(track_count)
-    FROM (
-        SELECT COUNT(id) AS track_count
-        FROM tracks
-        GROUP BY album_id
-    ) AS album_tracks
-)
-ORDER BY a.title;

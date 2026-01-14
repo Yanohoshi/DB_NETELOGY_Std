@@ -42,5 +42,5 @@ create table if not exists AlbumArtists (
 create table if not exists CollectionTracks (
 	collection_id integer not null references Collections(id),
 	track_id integer not null references Tracks(id),
-	constraint ct primary key (colletion_id, track_id)
+	constraint ct primary key (collection_id, track_id)
 );
